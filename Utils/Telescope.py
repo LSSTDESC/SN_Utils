@@ -8,6 +8,14 @@ import matplotlib.pyplot as plt
 import math
 from scipy.constants import *
 
+def get_val_decor(func):
+    def func_deco(theclass,what,xlist):
+        for x in xlist:
+            if x not in theclass.data[what].keys():
+                func(theclass,what,x)
+    return func_deco
+
+
 class Telescope(Throughputs):
     def __init__(self,airmass=1,atmos=True,aerosol=True,**kwargs):
         Throughputs.__init__(self,**kwargs)
@@ -23,143 +31,91 @@ class Telescope(Throughputs):
         self.atmos=atmos
 
         self.Load_Atmosphere(airmass)
+
         
-    @property
-    def FWHMeff(self):
-        return self.data['FWHMeff']
+    @get_val_decor
+    def get(self,what,band):
 
-    @property
-    def mag_sky(self,band='*'):
-        if band not in self.data['mag_sky'].keys():
-            self.Calc_Inputs(band)
-        if band == '*':
-            return self.data['mag_sky']
-        else:
-            return self.data['mag_sky'][band]
-
-    @property
-    def m5(self,band='*'):
-        if band not in self.data['m5'].keys():
-            self.Calc_m5(band)
-        if band == '*':
-            return self.data['m5']
-        else:
-            return self.data['m5'][band]
-
-    @property
-    def Tb(self,band='*'):
-        if band not in self.data['Tb'].keys():
-            self.Calc_Inputs(band)
-        if band == '*':
-            return self.data['Tb']
-        else:
-            return self.data['Tb'][band]
-
-    @property
-    def Sigmab(self,band='*'):
-        if band not in self.data['Sigmab'].keys():
-            self.Calc_Inputs(band)
-        if band == '*':
-            return self.data['Sigmab']
-        else:
-            return self.data['Sigmab'][band]
-    @property
-    def zp(self,band='*'):
-        if band not in self.data['zp'].keys():
-            self.Calc_zp(band)
-        if band == '*':
-            return self.data['zp']
-        else:
-            return self.data['zp'][band]
-
-    @property
-    def ADU_zp(self):
-        if band not in self.data['counts_zp'].keys():
-            self.Calc_zp(band)
-        if band == '*':
-            return self.data['counts_zp']
-        else:
-            return self.data['counts_zp'][band]
+        filter_trans=self.system[band]
+        wavelen_min, wavelen_max, wavelen_step=filter_trans.getWavelenLimits(None,None,None)
             
-    @property
-    def flux_sky(self,band='*'):
-        if band not in self.data['flux_sky'].keys():
-            self.Calc_m5(band)
-        if band == '*':
-            return self.data['flux_sky']
-        else:
-            return self.data['flux_sky'][band]
-
-    def Calc_Inputs(self,band='*'):
+        bandpass=Bandpass(wavelen=filter_trans.wavelen, sb=filter_trans.sb)
         
-        list_band=[band]
-        if band == '*':
-            list_band=self.filterlist
-
-        for bd in list_band:
-            myup=self.Calc_Integ_Sed(self.darksky,self.system[bd])
-            self.data['Tb'][bd]=self.Calc_Integ(self.atmosphere[bd])
-            self.data['Sigmab'][bd]=self.Calc_Integ(self.system[bd])
-            self.data['mag_sky'][bd]=-2.5*np.log10(myup/(3631.*self.data['Sigmab'][bd]))
-
-    def Calc_m5(self,filtre='*'):
-
-        list_filters=[filtre]
-        if filtre=='*':
-            list_filters=self.filterlist
-
-        for filt in list_filters:
-            filter_trans=self.system[filt]
-            wavelen_min, wavelen_max, wavelen_step=filter_trans.getWavelenLimits(None,None,None)
-                    
-            bandpass=Bandpass(wavelen=filter_trans.wavelen, sb=filter_trans.sb)
-
-            flatSedb = Sed()
-            flatSedb.setFlatSED(wavelen_min, wavelen_max, wavelen_step)
-            flux0b=np.power(10.,-0.4*self.mag_sky[filt])
-            flatSedb.multiplyFluxNorm(flux0b)
-            photParams = PhotometricParameters(bandpass=filt)
-            norm=photParams.platescale**2/2.*photParams.exptime/photParams.gain
-            trans=filter_trans
-
-            if self.atmos:
-                trans=self.atmosphere[filt]
-            self.data['m5'][filt]=SignalToNoise.calcM5(flatSedb,trans,filter_trans,photParams=photParams,FWHMeff=self.FWHMeff[filt])
-            adu_int= flatSedb.calcADU(bandpass=trans, photParams=photParams)
-            self.data['flux_sky'][filt]=adu_int*norm
-
-    def Calc_zp(self,band='*'):
+        flatSedb = Sed()
+        flatSedb.setFlatSED(wavelen_min, wavelen_max, wavelen_step)
+        flux0b=np.power(10.,-0.4*self.mag_sky(band))
+        flatSedb.multiplyFluxNorm(flux0b)
+        photParams = PhotometricParameters(bandpass=band)
+        norm=photParams.platescale**2/2.*photParams.exptime/photParams.gain
+        trans=filter_trans
         
-        list_band=[band]
-        if band=='*':
-            list_band=self.filterlist
+        if self.atmos:
+            trans=self.atmosphere[band]
+        self.data['m5'][band]=SignalToNoise.calcM5(flatSedb,trans,filter_trans,photParams=photParams,FWHMeff=self.FWHMeff(band))
+        adu_int= flatSedb.calcADU(bandpass=trans, photParams=photParams)
+        self.data['flux_sky'][band]=adu_int*norm
+                
+    @get_val_decor
+    def get_inputs(self,what,band):
+        
+        myup=self.Calc_Integ_Sed(self.darksky,self.system[band])
+        self.data['Tb'][band]=self.Calc_Integ(self.atmosphere[band])
+        self.data['Sigmab'][band]=self.Calc_Integ(self.system[band])
+        self.data['mag_sky'][band]=-2.5*np.log10(myup/(3631.*self.Sigmab(band)))
 
-        for filt in list_band:
-            self.zp_filter(filt)
+    @get_val_decor
+    def get_zp(self,what,band):
 
-    def zp_filter(self,filtre):
-
-        photParams=PhotometricParameters(bandpass=filtre)
-        Diameter=2.*np.sqrt(photParams.effarea*1.e-4/np.pi) # diameter in meter
+        photParams=PhotometricParameters(bandpass=band)
+        Diameter=2.*np.sqrt(photParams.effarea*1.e-4/np.pi) # diameter in meter                                                                                                       
         Cte=3631.*np.pi*Diameter**2*2.*photParams.exptime/4/h/1.e36
 
-        self.data['Skyb'][filtre]=Cte*np.power(Diameter/6.5,2.)*np.power(2.*photParams.exptime/30.,2.)*np.power(photParams.platescale,2.)*np.power(10.,0.4*(25.-self.mag_sky[filtre]))*self.Sigmab[filtre]
-            
-        Zb=181.8*np.power(Diameter/6.5,2.)*self.Tb[filtre]
-        mbZ=25.+2.5*np.log10(Zb) 
-        filtre_trans=self.system[filtre]
+        self.data['Skyb'][band]=Cte*np.power(Diameter/6.5,2.)*np.power(2.*photParams.exptime/30.,2.)*np.power(photParams.platescale,2.)*10.**0.4*(25.-self.mag_sky(band))*self.Sigmab(band)
+
+        Zb=181.8*np.power(Diameter/6.5,2.)*self.Tb(band)
+        mbZ=25.+2.5*np.log10(Zb)
+        filtre_trans=self.system[band]
         wavelen_min, wavelen_max, wavelen_step=filtre_trans.getWavelenLimits(None,None,None)
         bandpass=Bandpass(wavelen=filtre_trans.wavelen, sb=filtre_trans.sb)
         flatSed = Sed()
         flatSed.setFlatSED(wavelen_min, wavelen_max, wavelen_step)
         flux0=np.power(10.,-0.4*mbZ)
         flatSed.multiplyFluxNorm(flux0)
-        photParams=PhotometricParameters(bandpass=filtre)
-        counts = flatSed.calcADU(bandpass, photParams=photParams) #number of counts for exptime
-        self.data['zp'][filtre]=mbZ
-        #print 'hello',counts/self.photParams.exptime
-        self.data['counts_zp'][filtre]=counts/2.*photParams.exptime
+        photParams=PhotometricParameters(bandpass=band)
+        counts = flatSed.calcADU(bandpass, photParams=photParams) #number of counts for exptime                                                                                       
+        self.data['zp'][band]=mbZ
+        self.data['counts_zp'][band]=counts/2.*photParams.exptime
 
+    def return_value(self,what,band):
+        if len(band) > 1:
+            return self.data[what]
+        else:
+            return self.data[what][band]
+
+    def m5(self,filtre):
+        self.get('m5',filtre)
+        return self.return_value('m5',filtre)
+
+    def Tb(self,filtre):
+        self.get_inputs('Tb',filtre)
+        return self.return_value('Tb',filtre)
+
+    def mag_sky(self,filtre):
+        self.get_inputs('mag_sky',filtre)
+        return self.return_value('mag_sky',filtre)
+
+    def Sigmab(self,filtre):
+        self.get_inputs('Sigmab',filtre)
+        return self.return_value('Sigmab',filtre)
+        
+    def zp(self,filtre):
+        self.get_zp('zp',filtre)
+        return self.return_value('zp',filtre)
+        
+    def FWHMeff(self,filtre):
+        return self.return_value('FWHMeff',filtre)
+  
+        
     def Calc_Integ(self,bandpass):
         resu=0.
         dlam=0

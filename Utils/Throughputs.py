@@ -54,9 +54,9 @@ class Throughputs(object):
                 self.lsst_atmos[f]= self.lsst_system[f]
                 self.lsst_atmos_aerosol[f]=self.lsst_system[f]
 
-        self.lsst_telescope={}
+        #self.lsst_telescope={}
         
-        self.Load_Telescope()
+        #self.Load_Telescope()
         
         self.Mean_Wave()
 
@@ -157,6 +157,7 @@ class Throughputs(object):
 
     def Plot_DarkSky(self):
 
+        #self.Load_DarkSky()
         plt.plot(self.darksky.wavelen,self.darksky.flambda,'k:',linestyle='-')
         plt.xlabel('Wavelength (nm)')                                                                                   
         plt.ylabel('flambda (ergs/cm$^2$/s/nm)')                                                                                          
@@ -178,18 +179,6 @@ class Throughputs(object):
  
 
     def Mean_Wave(self):
-
-        """
-        thedir='../Cosmo_Maf/Instruments/Landolt/'
-        names=dict(zip(['B','I','R','U','V'],['sb_-41A.dat','si_-25A.dat','sr_-21A.dat','sux_modified.dat','sv_-27A.dat']))
-        for band in 'BRIUV':
-            t = Table.read(thedir+names[band],format='ascii')
-            print band,np.min(t['col1']),np.max(t['col1']),np.mean(np.max(t['col1'])-np.min(t['col1']))
-        """
         
-        if 'g' in self.filterlist:
-            for band in self.filterlist:
-                self.mean_wavelength[band]=np.sum(self.lsst_atmos[band].wavelen*self.lsst_atmos[band].sb)/np.sum(self.lsst_atmos[band].sb)
-        else:
-            for band in self.filterlist:
-                self.mean_wavelength[band]=0. 
+        for band in self.filterlist:
+            self.mean_wavelength[band]=np.sum(self.lsst_atmos[band].wavelen*self.lsst_atmos[band].sb)/np.sum(self.lsst_atmos[band].sb)
