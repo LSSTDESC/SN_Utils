@@ -17,7 +17,8 @@ def get_val_decor(func):
 
 
 class Telescope(Throughputs):
-    def __init__(self,airmass=1,atmos=True,aerosol=True,**kwargs):
+    def __init__(self,name='unknown',airmass=1,atmos=True,aerosol=True,**kwargs):
+        self.name=name
         Throughputs.__init__(self,**kwargs)
 
         params=['mag_sky','m5','FWHMeff','Tb','Sigmab','zp','counts_zp','Skyb','flux_sky']
