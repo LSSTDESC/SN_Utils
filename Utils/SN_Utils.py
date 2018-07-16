@@ -10,7 +10,7 @@ class Generate_Sample:
         self.sn_rate=SN_Rate(rate=self.params['z']['rate'],H0=cosmo_parameters['H0'],Om0=cosmo_parameters['Omega_m'],survey_area=sn_parameters['survey area'])
         
         self.x1_color=self.Get_Dist(self.params['X1_Color']['rate'])
-        print(self.x1_color)
+        #print(self.x1_color)
         
     def __call__(self,obs):
         
@@ -19,7 +19,7 @@ class Generate_Sample:
             zmax=self.params['z']['max']
             zz,rate, err_rate,nsn, err_nsn=self.sn_rate(zmin=zmin,zmax=zmax,duration=duration)
             N_SN=int(np.cumsum(nsn)[-1])
-            print('number of SN',N_SN,zmin,zmax,duration)
+            #print('number of SN',N_SN,zmin,zmax,duration)
             weight_z=np.cumsum(nsn)/np.sum(np.cumsum(nsn))
             dist_daymax=np.arange(np.min(obs['mjd']),np.max(obs['mjd']),0.1)
             r=[]
@@ -27,7 +27,7 @@ class Generate_Sample:
                 z=self.Get_Val(self.params['z']['type'],zmin,zz,weight_z)
                 x1_color=self.Get_Val(self.params['X1_Color']['type'],self.params['X1_Color']['min'],self.x1_color['low_z'][['X1','Color']],self.x1_color['low_z']['weight'])
                 DayMax=self.Get_Val(self.params['DayMax']['type'],self.params['DayMax']['min'],dist_daymax,[1./len(dist_daymax)]*len(dist_daymax))
-                print(j,z,x1_color,DayMax)
+                #print(j,z,x1_color,DayMax)
                 r.append((z,x1_color[0],x1_color[1],DayMax))
 
             return np.rec.fromrecords(r,names=['z','X1','Color','DayMax'])
