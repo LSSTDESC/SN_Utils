@@ -17,10 +17,11 @@ class Throughputs(object):
         params['filterlist']='ugrizy'
         params['wave_min']=300.
         params['wave_max']=1150.
-        for par in ['through_dir','atmos_dir','atmos','aerosol=','telescope_files','filterlist']:
+        for par in ['through_dir','atmos_dir','atmos','aerosol','telescope_files','filterlist','wave_min','wave_max']:
             if par in kwargs.keys():
-                    params[par]=str(kwargs[par])
-
+                params[par]=kwargs[par]
+                    #params[par]=str(kwargs[par])
+                
 
         self.throughputsDir = os.getenv(params['through_dir'])
         if os.path.exists(os.path.join(os.getenv(params['atmos_dir']), 'atmos')):
@@ -30,6 +31,8 @@ class Throughputs(object):
 
         self.telescope_files=params['telescope_files']
         self.filter_files=['filter_'+f+'.dat' for f in params['filterlist']]
+        if 'filter_files' in kwargs.keys():
+            self.filter_files=kwargs['filter_files']
         self.wave_min=params['wave_min']
         self.wave_max=params['wave_max']
         
@@ -82,13 +85,15 @@ class Throughputs(object):
             self.lsst_std[f] = Bandpass()
             #self.lsst_std[f].readThroughput(os.path.join(self.throughputsDir, 'total_'+f+'.dat'))
             self.lsst_system[f] = Bandpass()
-            index = [i for i,x in enumerate(self.filter_files) if f+'.dat' in x]
-            self.lsst_system[f].readThroughputList(self.telescope_files+[self.filter_files[index[0]]], 
+           
+            telfiles=''
+            if len(self.telescope_files) > 0:
+                index = [i for i,x in enumerate(self.filter_files) if f+'.dat' in x]
+                telfiles=self.telescope_files+[self.filter_files[index[0]]]
+            else:
+                telfiles=self.filter_files
+            self.lsst_system[f].readThroughputList(telfiles, 
                                                    rootDir=self.throughputsDir,wavelen_min=self.wave_min,wavelen_max=self.wave_max)
-
-            
-
-        #print 'loaded from',self.throughputsDir
 
     def Load_Telescope(self):
 
