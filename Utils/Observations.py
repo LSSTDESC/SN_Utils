@@ -16,7 +16,7 @@ class Observations:
     """
     def __init__(self, data,
                  nseasons=10, season_length=95,
-                 names=dict(zip(['band','mjd','rawSeeing','sky','exptime','moonPhase','Ra','Dec','Nexp','fiveSigmaDepth','seeing','airmass','night','season'],['band','mjd','seeingFwhm500','sky','exptime','moonPhase','Ra','Dec','numExposures','fiveSigmaDepth','seeingFwhmEff','airmass','night','season'])),coadd_night = True):
+                 names=dict(zip(['band','mjd','rawSeeing','sky','exptime','moonPhase','pixRa','pixDec','Nexp','fiveSigmaDepth','seeing','airmass','night','season'],['band','mjd','seeingFwhm500','sky','exptime','moonPhase','pixRa','pixDec','numExposures','fiveSigmaDepth','seeingFwhmEff','airmass','night','season'])),coadd_night = True):
 
         self.names = names
         
@@ -56,7 +56,7 @@ class Observations:
     
         nights=np.unique(filt[self.names['night']])
         
-        var_tot=['band','Ra','Dec','pixarea']
+        var_tot=['band','pixRa','pixDec','pixarea']
         vars_mean=['mjd','rawSeeing','sky','airmass','fiveSigmaDepth','moonPhase','night']
                                
         for night in nights:
