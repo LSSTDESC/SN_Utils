@@ -20,8 +20,7 @@ class Generate_Sample:
         self.params = sn_parameters
         self.sn_rate = SN_Rate(rate=self.params['z']['rate'],
                                H0=cosmo_parameters['H0'],
-                               Om0=cosmo_parameters['Omega_m'],
-                               survey_area=sn_parameters['survey area'])
+                               Om0=cosmo_parameters['Omega_m'])
 
         self.x1_color = self.Get_Dist(self.params['X1_Color']['rate'])
 
@@ -44,7 +43,9 @@ class Generate_Sample:
         zmax = self.params['z']['max']
         # get sn rate for this z range
         zz, rate, err_rate, nsn, err_nsn = self.sn_rate(
-            zmin=zmin, zmax=zmax, duration=duration)
+            zmin=zmin, zmax=zmax,
+            duration=duration,
+            survey_area = np.unique(obs['pixarea']))
         # get number of supernovae
         N_SN = int(np.cumsum(nsn)[-1])
         weight_z = np.cumsum(nsn)/np.sum(np.cumsum(nsn))

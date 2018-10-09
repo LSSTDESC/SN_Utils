@@ -56,13 +56,12 @@ class Observations:
     
         nights=np.unique(filt[self.names['night']])
         
-        var_tot=['band','Ra','Dec']
+        var_tot=['band','Ra','Dec','pixarea']
         vars_mean=['mjd','rawSeeing','sky','airmass','fiveSigmaDepth','moonPhase','night']
                                
         for night in nights:
             idx = filt[self.names['night']]==night
             theslice=filt[idx]
-            
             restot=dict(zip([var for var in var_tot],[theslice[self.names[var]][0] for var in var_tot]))
 
             N5=10**(-0.4*theslice[self.names['fiveSigmaDepth']])/5.

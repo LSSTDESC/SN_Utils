@@ -15,7 +15,7 @@ class SN_Rate:
     Input
     ---------
     Rate type, cosmology (H0, Om0)
-    survey_area,min and max rf phases
+    min and max rf phases
 
     Returns (call)
     ---------
@@ -28,16 +28,15 @@ class SN_Rate:
     """
 
     def __init__(self, rate='Ripoche', H0=70, Om0=0.25,
-                 survey_area=9.6,
                  min_rf_phase=-15., max_rf_phase=30.):
 
         self.astropy_cosmo = FlatLambdaCDM(H0=H0, Om0=Om0)
         self.rate = rate
-        self.survey_area = survey_area
         self.min_rf_phase = min_rf_phase
         self.max_rf_phase = max_rf_phase
 
-    def __call__(self, zmin=0.1, zmax=0.2, dz=0.01,
+    def __call__(self, zmin=0.1, zmax=0.2,
+                 dz=0.01, survey_area = 9.6,
                  bins=None, account_for_edges=False,
                  duration=140., duration_z=None):
         """
@@ -68,7 +67,7 @@ class SN_Rate:
         rate, err_rate = self.sn_rate(zz)
         error_rel = err_rate/rate
 
-        area = self.survey_area / STERADIAN2SQDEG
+        area = survey_area / STERADIAN2SQDEG
         # or area= self.survey_area/41253.
 
         dvol = norm*self.astropy_cosmo.comoving_volume(thebins).value
@@ -143,11 +142,11 @@ class SN_Rate:
             return self.flat_rate(z)
         """
 
-    def N_SN(self, z):
+    def N_SN(self, z, survey_area):
 
         rate, err_rate = self.sn_rate(z)
 
-        area = self.survey_area / STERADIAN2SQDEG
+        area = survey_area / STERADIAN2SQDEG
         vol = self.astropy_cosmo.comoving_volume(z).value
         duration = self.duration
         nsn = norm*rate*area*vol*duration/(1.+z)
