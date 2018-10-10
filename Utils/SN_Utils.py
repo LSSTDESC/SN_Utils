@@ -53,10 +53,13 @@ class Generate_Sample:
         r = []
         for j in range(N_SN):
             z = self.Get_Val(self.params['z']['type'], zmin, zz, weight_z)
+            zrange = 'low_z'
+            if z >= 0.1:
+                zrange = 'high_z'
             x1_color = self.Get_Val(self.params['X1_Color']['type'],
                                     self.params['X1_Color']['min'],
-                                    self.x1_color['low_z'][['X1', 'Color']],
-                                    self.x1_color['low_z']['weight'])
+                                    self.x1_color[zrange][['X1', 'Color']],
+                                    self.x1_color[zrange]['weight'])
             DayMax = self.Get_Val(self.params['DayMax']['type'],
                                   self.params['DayMax']['min'], dist_daymax,
                                   [1./len(dist_daymax)]*len(dist_daymax))
