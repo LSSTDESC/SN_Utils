@@ -13,5 +13,19 @@ export PYTHONPATH=${PWD}/SN_Catalog_Simulations/Sim_SNSim:$PYTHONPATH
 export PYTHONPATH=${PWD}/SN_Catalog_Simulations/Sim_SNAna:$PYTHONPATH
 
 export PYTHONPATH=${PWD}/SN_Utils/Utils:$PYTHONPATH
+export SN_UTILS_DIR=${PWD}/SN_Utils
+export SALT2_DIR= ${PWD}/SN_Utils/SALT2_Files
+
+#checking whether hdf5 is accessible localy or not
+lib='h5py'
 thedir=${PWD}/lib/python3.6/site-packages
+echo $thedir
+if [ -d ${thedir}$lib ]
+then
+    echo $lib 'already installed -> updating PYTHONPATH'
+else
+    echo $lib 'not installed -> installing with pip'
+    pip install --prefix=${PWD} ${lib}==2.7.1
+fi
+
 export PYTHONPATH=${thedir}:$PYTHONPATH

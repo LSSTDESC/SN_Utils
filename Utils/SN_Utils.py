@@ -1,6 +1,6 @@
 import numpy as np
 from SN_Rate import SN_Rate
-
+import os
 
 class Generate_Sample:
     """ Generates a sample of parameters for simulation
@@ -95,7 +95,7 @@ class Generate_Sample:
         val: recarray with X1,Color,weight_X1,weight_Color,weight
         """
 
-        prefix = '../SN_Utils/input/Dist_X1_Color_'+rate+'_'
+        prefix = os.getenv('SN_UTILS_DIR')+'/input/Dist_X1_Color_'+rate+'_'
         suffix = '.txt'
         # names=['x1','c','weight_x1','weight_c','weight_tot']
         dtype = np.dtype([('X1', np.float), ('Color', np.float),
