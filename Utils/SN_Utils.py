@@ -37,33 +37,46 @@ class Generate_Sample:
         """
 
         # get duration of obs
-        duration = np.max(obs['mjd'])-np.min(obs['mjd'])
+        daymin = np.min(obs['mjd'])
+        daymax = np.max(obs['mjd'])
+        duration = daymax-daymin
         # get z range
         zmin = self.params['z']['min']
         zmax = self.params['z']['max']
-        # get sn rate for this z range
-        zz, rate, err_rate, nsn, err_nsn = self.sn_rate(
-            zmin=zmin, zmax=zmax,
-            duration=duration,
-            survey_area = np.unique(obs['pixarea']))
-        # get number of supernovae
-        N_SN = int(np.cumsum(nsn)[-1])
-        weight_z = np.cumsum(nsn)/np.sum(np.cumsum(nsn))
-        dist_daymax = np.arange(np.min(obs['mjd']), np.max(obs['mjd']), 0.1)
         r = []
-        for j in range(N_SN):
-            z = self.Get_Val(self.params['z']['type'], zmin, zz, weight_z)
-            zrange = 'low_z'
-            if z >= 0.1:
-                zrange = 'high_z'
-            x1_color = self.Get_Val(self.params['X1_Color']['type'],
-                                    self.params['X1_Color']['min'],
-                                    self.x1_color[zrange][['X1', 'Color']],
-                                    self.x1_color[zrange]['weight'])
-            DayMax = self.Get_Val(self.params['DayMax']['type'],
-                                  self.params['DayMax']['min'], dist_daymax,
-                                  [1./len(dist_daymax)]*len(dist_daymax))
-            r.append((z, x1_color[0], x1_color[1], DayMax))
+        if self.params['z'] == 'random':
+            # get sn rate for this z range
+            zz, rate, err_rate, nsn, err_nsn = self.sn_rate(
+                zmin=zmin, zmax=zmax,
+                duration=duration,
+                survey_area = np.unique(obs['pixarea']))
+            # get number of supernovae
+            N_SN = int(np.cumsum(nsn)[-1])
+            weight_z = np.cumsum(nsn)/np.sum(np.cumsum(nsn))
+            dist_daymax = np.arange(np.min(obs['mjd']), np.max(obs['mjd']), 0.1)
+            for j in range(N_SN):
+                z = self.Get_Val(self.params['z']['type'], zmin, zz, weight_z)
+                zrange = 'low_z'
+                if z >= 0.1:
+                    zrange = 'high_z'
+                x1_color = self.Get_Val(self.params['X1_Color']['type'],
+                                        self.params['X1_Color']['min'],
+                                        self.x1_color[zrange][['X1', 'Color']],
+                                        self.x1_color[zrange]['weight'])
+                DayMax = self.Get_Val(self.params['DayMax']['type'],
+                                      self.params['DayMax']['min'], dist_daymax,
+                                      [1./len(dist_daymax)]*len(dist_daymax))
+                r.append((z, x1_color[0], x1_color[1], DayMax))
+
+        if self.params['z']['type'] == 'uniform':
+            zstep = self.params['z']['step']
+            daystep = self.params['DayMax']['step']
+            x1_color = self.params['X1_Color']['min']
+            for z in np.arange(zmin,zmax+zstep,zstep):
+                for daymax in np.arange(daymin, daymax, daystep):
+                    r.append((z, x1_color[0], x1_color[1], daymax))
+             
+        print('Number of SN to simulate:',len(r))
 
         return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax'])
 
