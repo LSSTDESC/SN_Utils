@@ -63,18 +63,24 @@ class Generate_Sample:
                                         self.params['X1_Color']['min'],
                                         self.x1_color[zrange][['X1', 'Color']],
                                         self.x1_color[zrange]['weight'])
-                DayMax = self.Get_Val(self.params['DayMax']['type'],
+                T0  = self.Get_Val(self.params['DayMax']['type'],
                                       self.params['DayMax']['min'], dist_daymax,
                                       [1./len(dist_daymax)]*len(dist_daymax))
-                r.append((z, x1_color[0], x1_color[1], DayMax))
+                r.append((z, x1_color[0], x1_color[1], T0))
 
         if self.params['z']['type'] == 'uniform':
             zstep = self.params['z']['step']
             daystep = self.params['DayMax']['step']
             x1_color = self.params['X1_Color']['min']
+            if self.params['DayMax']['type'] == 'uniform':
+                T0_values = np.arange(daymin, daymax, daystep)
+            if self.params['DayMax']['type'] == 'unique':
+                T0_values = [0.5*(daymin+daymax)]
+                
             for z in np.arange(zmin,zmax+zstep,zstep):
-                for daymax in np.arange(daymin, daymax, daystep):
-                    r.append((z, x1_color[0], x1_color[1], daymax))
+                    for T0 in T0_values:
+                        r.append((z, x1_color[0], x1_color[1], T0))
+             
              
         print('Number of SN to simulate:',len(r))
 
