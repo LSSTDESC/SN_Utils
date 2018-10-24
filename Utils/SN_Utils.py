@@ -15,7 +15,7 @@ class Generate_Sample:
     X1,Color,z,DayMax
     """
 
-    def __init__(self, sn_parameters, cosmo_parameters):
+    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',area = 9.6):
 
         self.params = sn_parameters
         self.sn_rate = SN_Rate(rate=self.params['z']['rate'],
@@ -23,7 +23,9 @@ class Generate_Sample:
                                Om0=cosmo_parameters['Omega_m'])
 
         self.x1_color = self.Get_Dist(self.params['X1_Color']['rate'])
-
+        self.mjdCol = mjdCol
+        self.area = area
+        
     def __call__(self, obs):
         """
         Input
@@ -37,8 +39,8 @@ class Generate_Sample:
         """
 
         # get duration of obs
-        daymin = np.min(obs['mjd'])
-        daymax = np.max(obs['mjd'])
+        daymin = np.min(obs[self.mjdCol])
+        daymax = np.max(obs[self.mjdCol])
         duration = daymax-daymin
         # get z range
         zmin = self.params['z']['min']
@@ -49,11 +51,11 @@ class Generate_Sample:
             zz, rate, err_rate, nsn, err_nsn = self.sn_rate(
                 zmin=zmin, zmax=zmax,
                 duration=duration,
-                survey_area = np.unique(obs['pixarea']))
+                survey_area = self.area)
             # get number of supernovae
             N_SN = int(np.cumsum(nsn)[-1])
             weight_z = np.cumsum(nsn)/np.sum(np.cumsum(nsn))
-            dist_daymax = np.arange(np.min(obs['mjd']), np.max(obs['mjd']), 0.1)
+            dist_daymax = np.arange(np.min(obs[self.mjdCol]), np.max(obs[self.mjdCol]), 0.1)
             for j in range(N_SN):
                 z = self.Get_Val(self.params['z']['type'], zmin, zz, weight_z)
                 zrange = 'low_z'
