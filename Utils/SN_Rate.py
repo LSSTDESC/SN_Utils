@@ -76,7 +76,7 @@ class SN_Rate:
 
         if account_for_edges:
             margin = (1.+zz) * (self.max_rf_phase-self.min_rf_phase) / 365.25
-            effective_duration = self.duration - margin
+            effective_duration = duration / 365.25 - margin
             effective_duration[effective_duration <= 0.] = 0.
         else:
             # duration in days!

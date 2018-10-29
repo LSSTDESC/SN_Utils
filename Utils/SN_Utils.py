@@ -15,7 +15,7 @@ class Generate_Sample:
     X1,Color,z,DayMax
     """
 
-    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',area = 9.6):
+    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',min_rf_phase=-15., max_rf_phase=30.,area = 9.6):
 
         self.params = sn_parameters
         self.sn_rate = SN_Rate(rate=self.params['z']['rate'],
@@ -25,6 +25,8 @@ class Generate_Sample:
         self.x1_color = self.Get_Dist(self.params['X1_Color']['rate'])
         self.mjdCol = mjdCol
         self.area = area
+        self.min_rf_phase = min_rf_phase
+        self.max_rf_phase = max_rf_phase
         
     def __call__(self, obs):
         """
@@ -37,7 +39,6 @@ class Generate_Sample:
         recarray of sn parameters for simulation:
         z, X1 , Color ,  DayMax
         """
-
         # get duration of obs
         daymin = np.min(obs[self.mjdCol])
         daymax = np.max(obs[self.mjdCol])
@@ -46,16 +47,17 @@ class Generate_Sample:
         zmin = self.params['z']['min']
         zmax = self.params['z']['max']
         r = []
-        if self.params['z'] == 'random':
+        if self.params['z']['type'] == 'random':
             # get sn rate for this z range
             zz, rate, err_rate, nsn, err_nsn = self.sn_rate(
                 zmin=zmin, zmax=zmax,
                 duration=duration,
-                survey_area = self.area)
+                survey_area = self.area,
+                account_for_edges=True)
             # get number of supernovae
             N_SN = int(np.cumsum(nsn)[-1])
             weight_z = np.cumsum(nsn)/np.sum(np.cumsum(nsn))
-            dist_daymax = np.arange(np.min(obs[self.mjdCol]), np.max(obs[self.mjdCol]), 0.1)
+           
             for j in range(N_SN):
                 z = self.Get_Val(self.params['z']['type'], zmin, zz, weight_z)
                 zrange = 'low_z'
@@ -65,8 +67,14 @@ class Generate_Sample:
                                         self.params['X1_Color']['min'],
                                         self.x1_color[zrange][['X1', 'Color']],
                                         self.x1_color[zrange]['weight'])
+                T0_values = []
+                if self.params['DayMax']['type'] == 'unique':
+                    T0_values = [daymin+20.*(1.+z)]
+                if self.params['DayMax']['type'] == 'random':
+                    T0_values = np.arange(daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, 0.1)
+                dist_daymax = T0_values
                 T0  = self.Get_Val(self.params['DayMax']['type'],
-                                      self.params['DayMax']['min'], dist_daymax,
+                                      -1., dist_daymax,
                                       [1./len(dist_daymax)]*len(dist_daymax))
                 r.append((z, x1_color[0], x1_color[1], T0))
 
@@ -74,20 +82,27 @@ class Generate_Sample:
             zstep = self.params['z']['step']
             daystep = self.params['DayMax']['step']
             x1_color = self.params['X1_Color']['min']
-            if self.params['DayMax']['type'] == 'uniform':
-                T0_values = np.arange(daymin, daymax, daystep)
-            if self.params['DayMax']['type'] == 'unique':
-                T0_values = [0.5*(daymin+daymax)]
-                
+       
+            if zmin == 0.01:
+                zmin = 0.
             for z in np.arange(zmin,zmax+zstep,zstep):
-                    for T0 in T0_values:
-                        r.append((z, x1_color[0], x1_color[1], T0))
+                if z == 0.:
+                    z = 0.01
+                if self.params['DayMax']['type'] == 'unique':
+                    T0_values = [daymin+20.*(1.+z)]
+                if self.params['DayMax']['type'] == 'uniform':
+                    T0_values = np.arange(daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
+                for T0 in T0_values:
+                    r.append((z, x1_color[0], x1_color[1], T0))
              
              
         print('Number of SN to simulate:',len(r))
 
-        return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax'])
-
+        if len(r) > 0:
+            return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax'])
+        else:
+            return None
+        
     def Get_Val(self, type, val, distrib, weight):
         """ Get values of a given parameter
         Input
