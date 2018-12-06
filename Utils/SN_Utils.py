@@ -305,6 +305,23 @@ class Make_Files_for_Cadence_Metric:
             print(i)
             simu[i] = Table.read(filename, path=key)
 
+        restot = None
         for key, val in simu.items():
             print(val.meta)
-            
+            z = val.meta['z']
+            X1 = val.meta['X1']
+            Color = val.meta['Color']
+            idx = val['flux_e'] > 0.
+            sel = val[idx]
+            print(z,len(val),len(val[idx]))
+            res = np.array(np.copy(sel[['time','band','flux_e']]),dtype=[('time', '<f8'), ('band', 'U8'), ('flux_e', '<f8')])
+            print(res.dtype,z)
+            res = rf.append_fields(res, 'z',[z]*len(res))
+            if restot is None:
+                restot = res
+            else:
+                restot = np.concatenate((restot,res))
+
+
+        print(restot)
+        np.save('Li_'+self.simulator_name+'_'+str(X1)+'_'+str(Color)+'.npy', np.copy(restot))
