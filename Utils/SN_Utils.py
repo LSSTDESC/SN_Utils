@@ -278,7 +278,7 @@ class Make_Files_for_Cadence_Metric:
         self.Prod_(file_name)
         
     def Prod_mag_to_flux(self):
-        mag_range=(22., 28.0)
+        mag_range=(20., 28.0)
         m5 = np.linspace(mag_range[0], mag_range[1], 50)
         mag_to_flux_tot = None
         for band in 'grizy':
