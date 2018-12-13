@@ -235,7 +235,7 @@ class Generate_Fake_Observations:
         inter_season_gap = 300.
         r = []
         for season in range(config['nseasons']):
-            mjd_min=100. + float(season)*inter_season_gap
+            mjd_min=config['MJD_min']+ float(season)*inter_season_gap
             mjd_max=mjd_min+config['season_length']
 
             for i,band in enumerate(bands):
