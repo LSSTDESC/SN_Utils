@@ -315,7 +315,7 @@ class Make_Files_for_Cadence_Metric:
             idx = val['flux_e'] > 0.
             sel = val[idx]
             print(z,len(val),len(val[idx]))
-            res = np.array(np.copy(sel[['time','band','flux_e']]),dtype=[('time', '<f8'), ('band', 'U8'), ('flux_e', '<f8')])
+            res = np.array(np.copy(sel[['time','band','flux_e','flux']]),dtype=[('time', '<f8'), ('band', 'U8'), ('flux_e', '<f8'),('flux', '<f8')])
             print(res.dtype,z)
             res = rf.append_fields(res, 'z',[z]*len(res))
             res = rf.append_fields(res, 'DayMax',[DayMax]*len(res))

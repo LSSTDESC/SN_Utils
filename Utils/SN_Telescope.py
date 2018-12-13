@@ -225,9 +225,10 @@ class Telescope(Throughputs):
     def zero_points(self, band):
         return np.asarray([self.zp[b] for b in band])
 
-    def mag_to_flux_e_sec(self,mag,band,exptime):                                                             
+    def mag_to_flux_e_sec(self,mag,band):                                                             
         """ mag to flux (in photoelec/sec)
         """
+        exptime = 30.
         if not hasattr(mag,'__iter__'):                                                                       
             wavelen_min, wavelen_max, wavelen_step=self.atmosphere[band].getWavelenLimits(None,None,None)
             sed = Sed()                                                                                       
@@ -242,7 +243,7 @@ class Telescope(Throughputs):
             #print('hello',photParams.gain,exptime)                                                           
             return counts,e_per_sec                                                                           
         else:                                                                                                 
-            return np.asarray([self.mag_to_flux_e_sec(m,b,e) for m,b,e in zip(mag,band,exptime)])     
+            return np.asarray([self.mag_to_flux_e_sec(m,b) for m,b in zip(mag,band)])     
     
     def gamma(self,mag,band,exptime):
         
