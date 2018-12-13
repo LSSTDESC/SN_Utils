@@ -274,8 +274,8 @@ class Make_Files_for_Cadence_Metric:
         self.telescope = telescope
         self.simulator_name = simulator_name
 
-        #self.Prod_mag_to_flux()
-        self.Prod_(file_name)
+        self.Prod_mag_to_flux()
+        #self.Prod_(file_name)
         
     def Prod_mag_to_flux(self):
         mag_range=(20., 28.0)
@@ -285,9 +285,9 @@ class Make_Files_for_Cadence_Metric:
             mag_to_flux = np.array(m5,dtype=[('m5','f8')])
             exptime = [30.] * len(m5)
             b = [band] * len(m5)
-            f5 = self.telescope.mag_to_flux_e_sec(m5, b,exptime)
+            f5 = self.telescope.mag_to_flux_e_sec(m5, b)
             print(b,f5[:],f5[:,[0]])
-            mag_to_flux = rf.append_fields(mag_to_flux, ['band','flux'], [ b ,f5[:,[1]] ],dtypes=['U256','f8'])
+            mag_to_flux = rf.append_fields(mag_to_flux, ['band','flux_e'], [ b ,f5[:,[1]] ],dtypes=['U256','f8'])
             if mag_to_flux_tot is None:
                 mag_to_flux_tot = mag_to_flux                                                                     
             else:
