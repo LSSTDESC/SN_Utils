@@ -1,9 +1,7 @@
 import numpy as np
 from SN_Rate import SN_Rate
 import os
-import yaml
 import numpy.lib.recfunctions as rf
-import h5py
 from astropy.table import Table
 
 class Generate_Sample:
@@ -201,11 +199,12 @@ class Generate_Fake_Observations:
     recordarray of observations:
     MJD, Ra, Dec, band,m5,Nexp, ExpTime, Season 
     """
-    def __init__(self, config_filename ,
+    def __init__(self, config,
                  mjdCol='observationStartMJD', RaCol='fieldRA',
                  DecCol='fieldDec',filterCol='filter', m5Col='fiveSigmaDepth',
                  exptimeCol='visitExposureTime',nexpCol='numExposures',seasonCol='season'):
-        config = yaml.load(open(config_filename))
+        
+        #config = yaml.load(open(config_filename))
         self.mjdCol = mjdCol
         self.m5Col = m5Col
         self.filterCol = filterCol
@@ -297,7 +296,7 @@ class Make_Files_for_Cadence_Metric:
         np.save('Mag_to_Flux_'+self.simulator_name+'.npy',np.copy(mag_to_flux_tot))
 
     def Prod_(self, filename):
-
+        import h5py
         f = h5py.File(filename, 'r')
         print(f.keys())
         simu={}
