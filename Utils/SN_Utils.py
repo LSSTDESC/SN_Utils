@@ -17,7 +17,7 @@ class Generate_Sample:
     X1,Color,z,DayMax
     """
 
-    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',min_rf_phase=-15., max_rf_phase=30.,area = 9.6):
+    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',seasonCol='season',min_rf_phase=-15., max_rf_phase=30.,area = 9.6):
 
         self.params = sn_parameters
         self.sn_rate = SN_Rate(rate=self.params['z']['rate'],
@@ -26,6 +26,7 @@ class Generate_Sample:
 
         self.x1_color = self.Get_Dist(self.params['X1_Color']['rate'])
         self.mjdCol = mjdCol
+        self.seasonCol=seasonCol
         self.area = area
         self.min_rf_phase = min_rf_phase
         self.max_rf_phase = max_rf_phase
@@ -42,10 +43,26 @@ class Generate_Sample:
         z, X1 , Color ,  DayMax
         """
         epsilon = 1.e-08
-        # get duration of obs
-        daymin = np.min(obs[self.mjdCol])
-        daymax = np.max(obs[self.mjdCol])
-        duration = daymax-daymin
+
+        r = []
+        for season in np.unique(obs[self.seasonCol]):
+            idx = obs[self.seasonCol] == season
+            sel_obs = obs[idx]
+            # get duration of obs
+            daymin = np.min(sel_obs[self.mjdCol])
+            daymax = np.max(sel_obs[self.mjdCol])
+            duration = daymax-daymin
+
+            rp = self.Get_parameters(daymin,daymax,duration)
+            if len(rp) > 0:
+                r+=rp
+        print('Number of SN to simulate:',len(r))
+        if len(r) > 0:
+            return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax','epsilon_z','epsilon_x1','epsilon_c','min_rf_phase','max_rf_phase'])
+        else:
+            return None
+
+    def Get_parameters(self,daymin,daymax,duration):
         # get z range
         zmin = self.params['z']['min']
         zmax = self.params['z']['max']
@@ -79,25 +96,8 @@ class Generate_Sample:
                 T0  = self.Get_Val(self.params['DayMax']['type'],
                                       -1., dist_daymax,
                                       [1./len(dist_daymax)]*len(dist_daymax))
-                r.append((z, x1_color[0], x1_color[1], T0))
-        """
-        if self.params['z']['type'] == 'uniform':
-            zstep = self.params['z']['step']
-            daystep = self.params['DayMax']['step']
-            x1_color = self.params['X1_Color']['min']
-       
-            if zmin == 0.01:
-                zmin = 0.
-            for z in np.arange(zmin,zmax+zstep,zstep):
-                if z == 0.:
-                    z = 0.01
-                if self.params['DayMax']['type'] == 'unique':
-                    T0_values = [daymin+20.*(1.+z)]
-                if self.params['DayMax']['type'] == 'uniform':
-                    T0_values = np.arange(daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
-                for T0 in T0_values:
-                    r.append((z, x1_color[0], x1_color[1], T0))
-        """    
+                r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
+
         if self.params['z']['type'] == 'uniform':
             zstep = self.params['z']['step']
             daystep = self.params['DayMax']['step']
@@ -112,18 +112,15 @@ class Generate_Sample:
                 if self.params['DayMax']['type'] == 'unique':
                     T0_values = [daymin+20.*(1.+z)]
                 for T0 in T0_values:
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.))
+                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
                     """
-                    r.append((z, x1_color[0], x1_color[1], T0,epsilon,0.,0.))
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,epsilon,0.))
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon))  
+                    r.append((z, x1_color[0], x1_color[1], T0,epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0,0.,epsilon,0.,self.min_rf_phase,self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon,self.min_rf_phase,self.max_rf_phase))  
                     """
-        print('Number of SN to simulate:',len(r))
 
-        if len(r) > 0:
-            return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax'])
-        else:
-            return None
+        return r
+        
         
     def Get_Val(self, type, val, distrib, weight):
         """ Get values of a given parameter
