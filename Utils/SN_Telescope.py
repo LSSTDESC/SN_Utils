@@ -232,7 +232,7 @@ class Telescope(Throughputs):
             wavelen_min, wavelen_max, wavelen_step=self.atmosphere[band].getWavelenLimits(None,None,None)
             sed = Sed()                                                                                       
             sed.setFlatSED()                                                                                  
-            flux0=3631.*10**(-0.4*mag) # flux in Jy                                                           
+            flux0 = 3631.*10**(-0.4*mag) # flux in Jy                                                           
             flux0 = sed.calcFluxNorm(mag,self.atmosphere[band])                                   
             sed.multiplyFluxNorm(flux0)                                                                       
             photParams=PhotometricParameters(nexp=exptime/15.)                                                
@@ -241,8 +241,8 @@ class Telescope(Throughputs):
             e_per_sec/=exptime/photParams.gain                                                                
             #print('hello',photParams.gain,exptime)                                                           
             return counts,e_per_sec                                                                           
-        else:                                                                                                 
-            return np.asarray([self.mag_to_flux_e_sec(m,b) for m,b in zip(mag,band)])     
+        else:
+            return np.asarray([self.mag_to_flux_e_sec(m,b,expt) for m,b,expt in zip(mag,band,exptime)])     
     
     def gamma(self,mag,band,exptime):
         
