@@ -58,7 +58,7 @@ class Generate_Sample:
                 r+=rp
         print('Number of SN to simulate:',len(r))
         if len(r) > 0:
-            return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax','epsilon_z','epsilon_x1','epsilon_c','min_rf_phase','max_rf_phase'])
+            return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax','epsilon_X0','epsilon_X1','epsilon_Color','min_rf_phase','max_rf_phase'])
         else:
             return None
 
@@ -67,6 +67,7 @@ class Generate_Sample:
         zmin = self.params['z']['min']
         zmax = self.params['z']['max']
         r = []
+        epsilon = 1.e-8
         if self.params['z']['type'] == 'random':
             # get sn rate for this z range
             zz, rate, err_rate, nsn, err_nsn = self.sn_rate(
@@ -113,11 +114,14 @@ class Generate_Sample:
                     T0_values = [daymin+20.*(1.+z)]
                 for T0 in T0_values:
                     r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
-                    """
+                    
                     r.append((z, x1_color[0], x1_color[1], T0,epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0,-epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
                     r.append((z, x1_color[0], x1_color[1], T0,0.,epsilon,0.,self.min_rf_phase,self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon,self.min_rf_phase,self.max_rf_phase))  
-                    """
+                    r.append((z, x1_color[0], x1_color[1], T0,0.,-epsilon,0.,self.min_rf_phase,self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon,self.min_rf_phase,self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,-epsilon,self.min_rf_phase,self.max_rf_phase)) 
+                    
 
         return r
         
