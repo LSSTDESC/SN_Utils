@@ -17,7 +17,7 @@ class Generate_Sample:
     X1,Color,z,DayMax
     """
 
-    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',seasonCol='season',min_rf_phase=-15., max_rf_phase=30.,area = 9.6):
+    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',seasonCol='season',filterCol='filter',min_rf_phase=-15., max_rf_phase=30.,area = 9.6):
 
         self.params = sn_parameters
         self.sn_rate = SN_Rate(rate=self.params['z']['rate'],
@@ -27,6 +27,7 @@ class Generate_Sample:
         self.x1_color = self.Get_Dist(self.params['X1_Color']['rate'])
         self.mjdCol = mjdCol
         self.seasonCol=seasonCol
+        self.filterCol=filterCol
         self.area = area
         self.min_rf_phase = min_rf_phase
         self.max_rf_phase = max_rf_phase
@@ -46,7 +47,7 @@ class Generate_Sample:
 
         r = []
         for season in np.unique(obs[self.seasonCol]):
-            idx = obs[self.seasonCol] == season
+            idx = (obs[self.seasonCol] == season)&(obs[self.filterCol]!='u')
             sel_obs = obs[idx]
             # get duration of obs
             daymin = np.min(sel_obs[self.mjdCol])
@@ -114,7 +115,25 @@ class Generate_Sample:
                     T0_values = [daymin+20.*(1.+z)]
                 for T0 in T0_values:
                     r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
-                    
+                    if self.params['differential_flux']:
+                        r.append((z, x1_color[0], x1_color[1], T0,epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0,-epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0,0.,epsilon,0.,self.min_rf_phase,self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0,0.,-epsilon,0.,self.min_rf_phase,self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon,self.min_rf_phase,self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0,0.,0.,-epsilon,self.min_rf_phase,self.max_rf_phase)) 
+
+        if self.params['z']['type'] == 'unique':
+            daystep = self.params['DayMax']['step']
+            x1_color = self.params['X1_Color']['min']
+            z = self.params['z']['min']
+            if self.params['DayMax']['type'] == 'uniform':
+                T0_values = np.arange(daymin, daymax, daystep)
+            if self.params['DayMax']['type'] == 'unique':
+                T0_values = [daymin+20.*(1.+z)]
+            for T0 in T0_values:
+                r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                if self.params['differential_flux']:
                     r.append((z, x1_color[0], x1_color[1], T0,epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
                     r.append((z, x1_color[0], x1_color[1], T0,-epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
                     r.append((z, x1_color[0], x1_color[1], T0,0.,epsilon,0.,self.min_rf_phase,self.max_rf_phase))
@@ -122,7 +141,6 @@ class Generate_Sample:
                     r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon,self.min_rf_phase,self.max_rf_phase))
                     r.append((z, x1_color[0], x1_color[1], T0,0.,0.,-epsilon,self.min_rf_phase,self.max_rf_phase)) 
                     
-
         return r
         
         
