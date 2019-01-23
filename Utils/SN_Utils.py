@@ -104,15 +104,20 @@ class Generate_Sample:
             zstep = self.params['z']['step']
             daystep = self.params['DayMax']['step']
             x1_color = self.params['X1_Color']['min']
-            if self.params['DayMax']['type'] == 'uniform':
-                T0_values = np.arange(daymin, daymax, daystep)
+            #if self.params['DayMax']['type'] == 'uniform':
+                #T0_values = np.arange(daymin, daymax, daystep)
+                #T0_values = np.arange(daymin+(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
             if zmin == 0.01:
                 zmin = 0.
             for z in np.arange(zmin,zmax+zstep,zstep):
                 if z == 0.:
                     z = 0.01
+                if self.params['DayMax']['type'] == 'uniform':
+                    T0_values = np.arange(daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
                 if self.params['DayMax']['type'] == 'unique':
                     T0_values = [daymin+20.*(1.+z)]
+                print('phases',z,daymin,daymax,(daymax-daymin)/(1.+z))
+                print('T0s',T0_values)
                 for T0 in T0_values:
                     r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
                     if self.params['differential_flux']:
