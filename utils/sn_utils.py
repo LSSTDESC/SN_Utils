@@ -1,8 +1,9 @@
 import numpy as np
-from SN_Rate import SN_Rate
+from sn_utils.utils.sn_rate import SN_Rate
 import os
 import numpy.lib.recfunctions as rf
 from astropy.table import Table
+
 
 class Generate_Sample:
     """ Generates a sample of parameters for simulation
@@ -17,7 +18,7 @@ class Generate_Sample:
     X1,Color,z,DayMax
     """
 
-    def __init__(self, sn_parameters, cosmo_parameters,mjdCol='mjd',seasonCol='season',filterCol='filter',min_rf_phase=-15., max_rf_phase=30.,area = 9.6):
+    def __init__(self, sn_parameters, cosmo_parameters, mjdCol='mjd', seasonCol='season', filterCol='filter', min_rf_phase=-15., max_rf_phase=30., area=9.6):
 
         self.params = sn_parameters
         self.sn_rate = SN_Rate(rate=self.params['z']['rate'],
@@ -26,12 +27,12 @@ class Generate_Sample:
 
         self.x1_color = self.Get_Dist(self.params['X1_Color']['rate'])
         self.mjdCol = mjdCol
-        self.seasonCol=seasonCol
-        self.filterCol=filterCol
+        self.seasonCol = seasonCol
+        self.filterCol = filterCol
         self.area = area
         self.min_rf_phase = min_rf_phase
         self.max_rf_phase = max_rf_phase
-        
+
     def __call__(self, obs):
         """
         Input
@@ -47,23 +48,24 @@ class Generate_Sample:
 
         r = []
         for season in np.unique(obs[self.seasonCol]):
-            idx = (obs[self.seasonCol] == season)&(obs[self.filterCol]!='u')
+            idx = (obs[self.seasonCol] == season) & (
+                obs[self.filterCol] != 'u')
             sel_obs = obs[idx]
             # get duration of obs
             daymin = np.min(sel_obs[self.mjdCol])
             daymax = np.max(sel_obs[self.mjdCol])
             duration = daymax-daymin
 
-            rp = self.Get_parameters(daymin,daymax,duration)
+            rp = self.Get_parameters(daymin, daymax, duration)
             if len(rp) > 0:
-                r+=rp
-        print('Number of SN to simulate:',len(r))
+                r += rp
+        print('Number of SN to simulate:', len(r))
         if len(r) > 0:
-            return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax','epsilon_X0','epsilon_X1','epsilon_Color','min_rf_phase','max_rf_phase'])
+            return np.rec.fromrecords(r, names=['z', 'X1', 'Color', 'DayMax', 'epsilon_X0', 'epsilon_X1', 'epsilon_Color', 'min_rf_phase', 'max_rf_phase'])
         else:
             return None
 
-    def Get_parameters(self,daymin,daymax,duration):
+    def Get_parameters(self, daymin, daymax, duration):
         # get z range
         zmin = self.params['z']['min']
         zmax = self.params['z']['max']
@@ -74,12 +76,12 @@ class Generate_Sample:
             zz, rate, err_rate, nsn, err_nsn = self.sn_rate(
                 zmin=zmin, zmax=zmax,
                 duration=duration,
-                survey_area = self.area,
+                survey_area=self.area,
                 account_for_edges=True)
             # get number of supernovae
             N_SN = int(np.cumsum(nsn)[-1])
             weight_z = np.cumsum(nsn)/np.sum(np.cumsum(nsn))
-           
+
             for j in range(N_SN):
                 z = self.Get_Val(self.params['z']['type'], zmin, zz, weight_z)
                 zrange = 'low_z'
@@ -93,40 +95,50 @@ class Generate_Sample:
                 if self.params['DayMax']['type'] == 'unique':
                     T0_values = [daymin+20.*(1.+z)]
                 if self.params['DayMax']['type'] == 'random':
-                    T0_values = np.arange(daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, 0.1)
+                    T0_values = np.arange(
+                        daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, 0.1)
                 dist_daymax = T0_values
-                T0  = self.Get_Val(self.params['DayMax']['type'],
-                                      -1., dist_daymax,
-                                      [1./len(dist_daymax)]*len(dist_daymax))
-                r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                T0 = self.Get_Val(self.params['DayMax']['type'],
+                                  -1., dist_daymax,
+                                  [1./len(dist_daymax)]*len(dist_daymax))
+                r.append((z, x1_color[0], x1_color[1], T0, 0.,
+                          0., 0., self.min_rf_phase, self.max_rf_phase))
 
         if self.params['z']['type'] == 'uniform':
             zstep = self.params['z']['step']
             daystep = self.params['DayMax']['step']
             x1_color = self.params['X1_Color']['min']
-            #if self.params['DayMax']['type'] == 'uniform':
-                #T0_values = np.arange(daymin, daymax, daystep)
-                #T0_values = np.arange(daymin+(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
+            # if self.params['DayMax']['type'] == 'uniform':
+            #T0_values = np.arange(daymin, daymax, daystep)
+            #T0_values = np.arange(daymin+(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
             if zmin == 0.01:
                 zmin = 0.
-            for z in np.arange(zmin,zmax+zstep,zstep):
+            for z in np.arange(zmin, zmax+zstep, zstep):
                 if z == 0.:
                     z = 0.01
                 if self.params['DayMax']['type'] == 'uniform':
-                    T0_values = np.arange(daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
+                    T0_values = np.arange(
+                        daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
                 if self.params['DayMax']['type'] == 'unique':
                     T0_values = [daymin+20.*(1.+z)]
-                print('phases',z,daymin,daymax,(daymax-daymin)/(1.+z))
-                print('T0s',T0_values)
+                print('phases', z, daymin, daymax, (daymax-daymin)/(1.+z))
+                print('T0s', T0_values)
                 for T0 in T0_values:
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0, 0.,
+                              0., 0., self.min_rf_phase, self.max_rf_phase))
                     if self.params['differential_flux']:
-                        r.append((z, x1_color[0], x1_color[1], T0,epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0,-epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0,0.,epsilon,0.,self.min_rf_phase,self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0,0.,-epsilon,0.,self.min_rf_phase,self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon,self.min_rf_phase,self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0,0.,0.,-epsilon,self.min_rf_phase,self.max_rf_phase)) 
+                        r.append((z, x1_color[0], x1_color[1], T0, epsilon,
+                                  0., 0., self.min_rf_phase, self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0, -epsilon,
+                                  0., 0., self.min_rf_phase, self.max_rf_phase))
+                        r.append(
+                            (z, x1_color[0], x1_color[1], T0, 0., epsilon, 0., self.min_rf_phase, self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0, 0., -
+                                  epsilon, 0., self.min_rf_phase, self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0, 0., 0.,
+                                  epsilon, self.min_rf_phase, self.max_rf_phase))
+                        r.append((z, x1_color[0], x1_color[1], T0, 0., 0., -
+                                  epsilon, self.min_rf_phase, self.max_rf_phase))
 
         if self.params['z']['type'] == 'unique':
             daystep = self.params['DayMax']['step']
@@ -137,18 +149,24 @@ class Generate_Sample:
             if self.params['DayMax']['type'] == 'unique':
                 T0_values = [daymin+20.*(1.+z)]
             for T0 in T0_values:
-                r.append((z, x1_color[0], x1_color[1], T0,0.,0.,0.,self.min_rf_phase,self.max_rf_phase))
+                r.append((z, x1_color[0], x1_color[1], T0, 0.,
+                          0., 0., self.min_rf_phase, self.max_rf_phase))
                 if self.params['differential_flux']:
-                    r.append((z, x1_color[0], x1_color[1], T0,epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0,-epsilon,0.,0.,self.min_rf_phase,self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,epsilon,0.,self.min_rf_phase,self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,-epsilon,0.,self.min_rf_phase,self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,epsilon,self.min_rf_phase,self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0,0.,0.,-epsilon,self.min_rf_phase,self.max_rf_phase)) 
-                    
+                    r.append((z, x1_color[0], x1_color[1], T0, epsilon,
+                              0., 0., self.min_rf_phase, self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0, -epsilon,
+                              0., 0., self.min_rf_phase, self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0, 0.,
+                              epsilon, 0., self.min_rf_phase, self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0, 0., -
+                              epsilon, 0., self.min_rf_phase, self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0, 0., 0.,
+                              epsilon, self.min_rf_phase, self.max_rf_phase))
+                    r.append((z, x1_color[0], x1_color[1], T0, 0., 0., -
+                              epsilon, self.min_rf_phase, self.max_rf_phase))
+
         return r
-        
-        
+
     def Get_Val(self, type, val, distrib, weight):
         """ Get values of a given parameter
         Input
@@ -213,10 +231,9 @@ class Generate_Sample:
         plt.show()
 
 
-
 class Make_Files_for_Cadence_Metric:
-    
-    def __init__(self, file_name, telescope,simulator_name):
+
+    def __init__(self, file_name, telescope, simulator_name):
         """ Class to generate two files that will be used as input for the Cadence metric 
         Input
         ---------
@@ -232,32 +249,35 @@ class Make_Files_for_Cadence_Metric:
         self.simulator_name = simulator_name
 
         self.Prod_mag_to_flux()
-        #self.Prod_(file_name)
-        
+        # self.Prod_(file_name)
+
     def Prod_mag_to_flux(self):
-        mag_range=(20., 28.0)
+        mag_range = (20., 28.0)
         m5 = np.linspace(mag_range[0], mag_range[1], 50)
         mag_to_flux_tot = None
         for band in 'grizy':
-            mag_to_flux = np.array(m5,dtype=[('m5','f8')])
+            mag_to_flux = np.array(m5, dtype=[('m5', 'f8')])
             exptime = [30.] * len(m5)
             b = [band] * len(m5)
             f5 = self.telescope.mag_to_flux_e_sec(m5, b)
-            print(b,f5[:],f5[:,[0]])
-            mag_to_flux = rf.append_fields(mag_to_flux, ['band','flux_e'], [ b ,f5[:,[1]] ],dtypes=['U256','f8'])
+            print(b, f5[:], f5[:, [0]])
+            mag_to_flux = rf.append_fields(mag_to_flux, ['band', 'flux_e'], [
+                                           b, f5[:, [1]]], dtypes=['U256', 'f8'])
             if mag_to_flux_tot is None:
-                mag_to_flux_tot = mag_to_flux                                                                     
+                mag_to_flux_tot = mag_to_flux
             else:
-                mag_to_flux_tot = np.concatenate((mag_to_flux_tot,mag_to_flux))                                   
+                mag_to_flux_tot = np.concatenate(
+                    (mag_to_flux_tot, mag_to_flux))
         print(mag_to_flux_tot)
-        #print('done')
-        np.save('Mag_to_Flux_'+self.simulator_name+'.npy',np.copy(mag_to_flux_tot))
+        # print('done')
+        np.save('Mag_to_Flux_'+self.simulator_name +
+                '.npy', np.copy(mag_to_flux_tot))
 
     def Prod_(self, filename):
         import h5py
         f = h5py.File(filename, 'r')
         print(f.keys())
-        simu={}
+        simu = {}
         for i, key in enumerate(f.keys()):
             print(i)
             simu[i] = Table.read(filename, path=key)
@@ -271,16 +291,17 @@ class Make_Files_for_Cadence_Metric:
             DayMax = val.meta['DayMax']
             idx = val['flux_e'] > 0.
             sel = val[idx]
-            print(z,len(val),len(val[idx]))
-            res = np.array(np.copy(sel[['time','band','flux_e','flux']]),dtype=[('time', '<f8'), ('band', 'U8'), ('flux_e', '<f8'),('flux', '<f8')])
-            print(res.dtype,z)
-            res = rf.append_fields(res, 'z',[z]*len(res))
-            res = rf.append_fields(res, 'DayMax',[DayMax]*len(res))
+            print(z, len(val), len(val[idx]))
+            res = np.array(np.copy(sel[['time', 'band', 'flux_e', 'flux']]), dtype=[
+                           ('time', '<f8'), ('band', 'U8'), ('flux_e', '<f8'), ('flux', '<f8')])
+            print(res.dtype, z)
+            res = rf.append_fields(res, 'z', [z]*len(res))
+            res = rf.append_fields(res, 'DayMax', [DayMax]*len(res))
             if restot is None:
                 restot = res
             else:
-                restot = np.concatenate((restot,res))
-
+                restot = np.concatenate((restot, res))
 
         print(restot)
-        np.save('Li_'+self.simulator_name+'_'+str(X1)+'_'+str(Color)+'.npy', np.copy(restot))
+        np.save('Li_'+self.simulator_name+'_'+str(X1) +
+                '_'+str(Color)+'.npy', np.copy(restot))

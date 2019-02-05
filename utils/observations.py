@@ -14,76 +14,80 @@ class Observations:
 
     by default : poor seasons (< 10 observations all bands) are removed
     """
+
     def __init__(self, data,
                  nseasons=10, season_length=95,
-                 names=dict(zip(['band','mjd','rawSeeing','sky','exptime','moonPhase','pixRa','pixDec','Nexp','fiveSigmaDepth','seeing','airmass','night','season'],['band','mjd','seeingFwhm500','sky','exptime','moonPhase','pixRa','pixDec','numExposures','fiveSigmaDepth','seeingFwhmEff','airmass','night','season'])),coadd_night = True):
+                 names=dict(zip(['band', 'mjd', 'rawSeeing', 'sky', 'exptime', 'moonPhase', 'pixRa', 'pixDec', 'Nexp', 'fiveSigmaDepth', 'seeing', 'airmass', 'night', 'season'], ['band', 'mjd', 'seeingFwhm500', 'sky', 'exptime', 'moonPhase', 'pixRa', 'pixDec', 'numExposures', 'fiveSigmaDepth', 'seeingFwhmEff', 'airmass', 'night', 'season'])), coadd_night=True):
 
         self.names = names
-        
+
         data.sort(order=self.names['mjd'])
-        
+
         self.all_seasons = data
         self.seasons = self.Get_Seasons(data, season_length)
-        
-        if coadd_night :
+
+        if coadd_night:
             self.Coadd()
         self.Remove_Poor_Seasons()
         # print 'Nseasons',len(self.seasons)
         # print data
-        
+
     def Coadd(self):
 
-        #self.seasons_coadd={}
+        # self.seasons_coadd={}
         for i in range(len(self.seasons)):
-            season=self.seasons[i]
-            coadd_tot=None
+            season = self.seasons[i]
+            coadd_tot = None
             for band in np.unique(season['band']):
-                idx = season['band']==band
-                coadd=self.Coadd_Season_night(season[idx])
-               
+                idx = season['band'] == band
+                coadd = self.Coadd_Season_night(season[idx])
+
                 if coadd_tot is None:
-                    coadd_tot=coadd
+                    coadd_tot = coadd
                 else:
-                    coadd_tot=np.concatenate((coadd_tot,coadd))
-            self.seasons[i]=coadd_tot
-            
-    def Coadd_Season_night(self,filt):
+                    coadd_tot = np.concatenate((coadd_tot, coadd))
+            self.seasons[i] = coadd_tot
+
+    def Coadd_Season_night(self, filt):
 
         if len(filt) == 0:
             return None
-        
-        r=[]
-    
-        nights=np.unique(filt[self.names['night']])
-        
-        var_tot=['band','pixRa','pixDec','pixarea']
-        vars_mean=['mjd','rawSeeing','sky','airmass','fiveSigmaDepth','moonPhase','night']
-                               
+
+        r = []
+
+        nights = np.unique(filt[self.names['night']])
+
+        var_tot = ['band', 'pixRa', 'pixDec', 'pixarea']
+        vars_mean = ['mjd', 'rawSeeing', 'sky', 'airmass',
+                     'fiveSigmaDepth', 'moonPhase', 'night']
+
         for night in nights:
-            idx = filt[self.names['night']]==night
-            theslice=filt[idx]
-            restot=dict(zip([var for var in var_tot],[theslice[self.names[var]][0] for var in var_tot]))
+            idx = filt[self.names['night']] == night
+            theslice = filt[idx]
+            restot = dict(zip([var for var in var_tot], [
+                          theslice[self.names[var]][0] for var in var_tot]))
 
-            N5=10**(-0.4*theslice[self.names['fiveSigmaDepth']])/5.
-            #print('N5',N5)
-            Ntot=np.sum((1./N5)**2)
-            Ftot=5./np.sqrt(Ntot)
-            m5_tot=-2.5*np.log10(Ftot)
+            N5 = 10**(-0.4*theslice[self.names['fiveSigmaDepth']])/5.
+            # print('N5',N5)
+            Ntot = np.sum((1./N5)**2)
+            Ftot = 5./np.sqrt(Ntot)
+            m5_tot = -2.5*np.log10(Ftot)
 
-            res=dict(zip([var for var in vars_mean],[np.mean(theslice[self.names[var]]) for var in vars_mean]))
-            res['exptime']=np.sum(theslice[self.names['exptime']])
-            res['seeing']=np.mean(theslice[self.names['seeing']])
-            
-            res['fiveSigmaDepth']=m5_tot
-            res['Nexp']=np.sum(theslice[self.names['Nexp']])
+            res = dict(zip([var for var in vars_mean], [np.mean(
+                theslice[self.names[var]]) for var in vars_mean]))
+            res['exptime'] = np.sum(theslice[self.names['exptime']])
+            res['seeing'] = np.mean(theslice[self.names['seeing']])
+
+            res['fiveSigmaDepth'] = m5_tot
+            res['Nexp'] = np.sum(theslice[self.names['Nexp']])
             restot.update(res)
             r.append(tuple([restot[key] for key in restot.keys()]))
-            
-        #print(restot)
-        #print('hello',restot.keys(),r)
-       
-        return np.rec.fromrecords(r,names=[key for key in restot.keys()])   
-        
+
+        # print(restot)
+        # print('hello',restot.keys(),r)
+
+        return np.rec.fromrecords(r, names=[key for key in restot.keys()])
+
     def Load(self, filename):
         """ Load txt file of observations
          Input

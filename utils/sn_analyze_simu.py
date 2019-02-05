@@ -3,7 +3,7 @@ import h5py
 import argparse
 from astropy.table import Table
 import pylab as plt
-from SN_Rate import SN_Rate
+from sn_utils.utils.sn_rate import SN_Rate
 
 
 def Plot_Parameters(tab, season):
@@ -44,7 +44,7 @@ def Plot_Parameters(tab, season):
             zmax = np.max(sel['z'])
             duration = np.max(sel['DayMax'])-np.min(sel['DayMax'])
             zz, rate, err_rate, nsn, err_nsn = sn_rate(
-                zmin=zmin-dz/2., zmax=zmax, dz=dz, duration=duration,survey_area=9.6)
+                zmin=zmin-dz/2., zmax=zmax, dz=dz, duration=duration, survey_area=9.6)
             axis.plot(zz, np.cumsum(nsn))
             axis.plot(bin_center, np.cumsum(n))
     plt.show()
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # load the hdf5 file
     filename = args.filename
-    
+
     f = h5py.File(filename, 'r')
     print(f.keys())
     for i, key in enumerate(f.keys()):

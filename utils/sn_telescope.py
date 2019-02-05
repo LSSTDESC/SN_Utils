@@ -1,7 +1,7 @@
 from lsst.sims.photUtils import SignalToNoise
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.photUtils import Bandpass, Sed
-from SN_Throughputs import Throughputs
+from sn_utils.utils.sn_throughputs import Throughputs
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -225,30 +225,32 @@ class Telescope(Throughputs):
     def zero_points(self, band):
         return np.asarray([self.zp[b] for b in band])
 
-    def mag_to_flux_e_sec(self,mag,band,exptime):                                                             
+    def mag_to_flux_e_sec(self, mag, band, exptime):
         """ mag to flux (in photoelec/sec)
         """
-        if not hasattr(mag,'__iter__'):                                                                       
-            wavelen_min, wavelen_max, wavelen_step=self.atmosphere[band].getWavelenLimits(None,None,None)
-            sed = Sed()                                                                                       
-            sed.setFlatSED()                                                                                  
-            flux0 = 3631.*10**(-0.4*mag) # flux in Jy                                                           
-            flux0 = sed.calcFluxNorm(mag,self.atmosphere[band])                                   
-            sed.multiplyFluxNorm(flux0)                                                                       
-            photParams=PhotometricParameters(nexp=exptime/15.)                                                
-            counts = sed.calcADU(bandpass=self.atmosphere[band], photParams=photParams)           
-            e_per_sec=counts                                                                                  
-            e_per_sec/=exptime/photParams.gain                                                                
-            #print('hello',photParams.gain,exptime)                                                           
-            return counts,e_per_sec                                                                           
+        if not hasattr(mag, '__iter__'):
+            wavelen_min, wavelen_max, wavelen_step = self.atmosphere[band].getWavelenLimits(
+                None, None, None)
+            sed = Sed()
+            sed.setFlatSED()
+            flux0 = 3631.*10**(-0.4*mag)  # flux in Jy
+            flux0 = sed.calcFluxNorm(mag, self.atmosphere[band])
+            sed.multiplyFluxNorm(flux0)
+            photParams = PhotometricParameters(nexp=exptime/15.)
+            counts = sed.calcADU(
+                bandpass=self.atmosphere[band], photParams=photParams)
+            e_per_sec = counts
+            e_per_sec /= exptime/photParams.gain
+            # print('hello',photParams.gain,exptime)
+            return counts, e_per_sec
         else:
-            return np.asarray([self.mag_to_flux_e_sec(m,b,expt) for m,b,expt in zip(mag,band,exptime)])     
-    
-    def gamma(self,mag,band,exptime):
-        
-        if not hasattr(mag,'__iter__'):
-            photParams=PhotometricParameters(nexp=exptime/15.)
-            counts, e_per_sec=self.mag_to_flux_e_sec(mag,band,exptime)
+            return np.asarray([self.mag_to_flux_e_sec(m, b, expt) for m, b, expt in zip(mag, band, exptime)])
+
+    def gamma(self, mag, band, exptime):
+
+        if not hasattr(mag, '__iter__'):
+            photParams = PhotometricParameters(nexp=exptime/15.)
+            counts, e_per_sec = self.mag_to_flux_e_sec(mag, band, exptime)
             return 0.04-1./(photParams.gain*counts)
         else:
-            return np.asarray([self.gamma(m,b,e) for m,b,e in zip(mag,band,exptime)])  
+            return np.asarray([self.gamma(m, b, e) for m, b, e in zip(mag, band, exptime)])
