@@ -127,18 +127,12 @@ class Generate_Sample:
                     r.append((z, x1_color[0], x1_color[1], T0, 0.,
                               0., 0., self.min_rf_phase, self.max_rf_phase))
                     if self.params['differential_flux']:
-                        r.append((z, x1_color[0], x1_color[1], T0, epsilon,
-                                  0., 0., self.min_rf_phase, self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0, -epsilon,
-                                  0., 0., self.min_rf_phase, self.max_rf_phase))
-                        r.append(
-                            (z, x1_color[0], x1_color[1], T0, 0., epsilon, 0., self.min_rf_phase, self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0, 0., -
-                                  epsilon, 0., self.min_rf_phase, self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0, 0., 0.,
-                                  epsilon, self.min_rf_phase, self.max_rf_phase))
-                        r.append((z, x1_color[0], x1_color[1], T0, 0., 0., -
-                                  epsilon, self.min_rf_phase, self.max_rf_phase))
+                        rstart = [z, x1_color[0], x1_color[1], T0, 0.,
+                                  0., 0., self.min_rf_phase, self.max_rf_phase]
+                        for kdiff in [4, -4, 5, -5, 6, -6]:
+                            rstartc = list(rstart)
+                            rstartc[np.abs(kdiff)] = epsilon*np.sign(kdiff)
+                            r.append(tuple(rstartc))
 
         if self.params['z']['type'] == 'unique':
             daystep = self.params['DayMax']['step']
@@ -152,18 +146,13 @@ class Generate_Sample:
                 r.append((z, x1_color[0], x1_color[1], T0, 0.,
                           0., 0., self.min_rf_phase, self.max_rf_phase))
                 if self.params['differential_flux']:
-                    r.append((z, x1_color[0], x1_color[1], T0, epsilon,
-                              0., 0., self.min_rf_phase, self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0, -epsilon,
-                              0., 0., self.min_rf_phase, self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0, 0.,
-                              epsilon, 0., self.min_rf_phase, self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0, 0., -
-                              epsilon, 0., self.min_rf_phase, self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0, 0., 0.,
-                              epsilon, self.min_rf_phase, self.max_rf_phase))
-                    r.append((z, x1_color[0], x1_color[1], T0, 0., 0., -
-                              epsilon, self.min_rf_phase, self.max_rf_phase))
+                    if self.params['differential_flux']:
+                        rstart = [z, x1_color[0], x1_color[1], T0, 0.,
+                                  0., 0., self.min_rf_phase, self.max_rf_phase]
+                        for kdiff in [4, -4, 5, -5, 6, -6]:
+                            rstartc = list(rstart)
+                            rstartc[np.abs(kdiff)] = epsilon*np.sign(kdiff)
+                            r.append(tuple(rstartc))
 
         return r
 
