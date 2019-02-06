@@ -121,8 +121,8 @@ class Generate_Sample:
                         daymin-(1.+z)*self.min_rf_phase, daymax-(1.+z)*self.max_rf_phase, daystep)
                 if self.params['DayMax']['type'] == 'unique':
                     T0_values = [daymin+20.*(1.+z)]
-                print('phases', z, daymin, daymax, (daymax-daymin)/(1.+z))
-                print('T0s', T0_values)
+                #print('phases', z, daymin, daymax, (daymax-daymin)/(1.+z))
+                #print('T0s', T0_values)
                 for T0 in T0_values:
                     r.append((z, x1_color[0], x1_color[1], T0, 0.,
                               0., 0., self.min_rf_phase, self.max_rf_phase))
@@ -260,7 +260,7 @@ class Make_Files_for_Cadence_Metric:
             exptime = [30.] * len(m5)
             b = [band] * len(m5)
             f5 = self.telescope.mag_to_flux_e_sec(m5, b)
-            print(b, f5[:], f5[:, [0]])
+            #print(b, f5[:], f5[:, [0]])
             mag_to_flux = rf.append_fields(mag_to_flux, ['band', 'flux_e'], [
                                            b, f5[:, [1]]], dtypes=['U256', 'f8'])
             if mag_to_flux_tot is None:
@@ -268,7 +268,7 @@ class Make_Files_for_Cadence_Metric:
             else:
                 mag_to_flux_tot = np.concatenate(
                     (mag_to_flux_tot, mag_to_flux))
-        print(mag_to_flux_tot)
+        # print(mag_to_flux_tot)
         # print('done')
         np.save('Mag_to_Flux_'+self.simulator_name +
                 '.npy', np.copy(mag_to_flux_tot))
@@ -276,25 +276,25 @@ class Make_Files_for_Cadence_Metric:
     def Prod_(self, filename):
         import h5py
         f = h5py.File(filename, 'r')
-        print(f.keys())
+        # print(f.keys())
         simu = {}
         for i, key in enumerate(f.keys()):
-            print(i)
+            # print(i)
             simu[i] = Table.read(filename, path=key)
 
         restot = None
         for key, val in simu.items():
-            print(val.meta)
+            # print(val.meta)
             z = val.meta['z']
             X1 = val.meta['X1']
             Color = val.meta['Color']
             DayMax = val.meta['DayMax']
             idx = val['flux_e'] > 0.
             sel = val[idx]
-            print(z, len(val), len(val[idx]))
+            #print(z, len(val), len(val[idx]))
             res = np.array(np.copy(sel[['time', 'band', 'flux_e', 'flux']]), dtype=[
                            ('time', '<f8'), ('band', 'U8'), ('flux_e', '<f8'), ('flux', '<f8')])
-            print(res.dtype, z)
+            #print(res.dtype, z)
             res = rf.append_fields(res, 'z', [z]*len(res))
             res = rf.append_fields(res, 'DayMax', [DayMax]*len(res))
             if restot is None:
@@ -302,6 +302,6 @@ class Make_Files_for_Cadence_Metric:
             else:
                 restot = np.concatenate((restot, res))
 
-        print(restot)
+        # print(restot)
         np.save('Li_'+self.simulator_name+'_'+str(X1) +
                 '_'+str(Color)+'.npy', np.copy(restot))
