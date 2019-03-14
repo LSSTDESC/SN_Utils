@@ -57,8 +57,7 @@ class Telescope(Throughputs):
     flux_sky:
     """
 
-    def __init__(self, name='unknown', airmass=1,
-                 atmos=True, aerosol=True, **kwargs):
+    def __init__(self, name='unknown', airmass=1, **kwargs):
         self.name = name
         Throughputs.__init__(self, **kwargs)
 
@@ -72,9 +71,9 @@ class Telescope(Throughputs):
         self.data['FWHMeff'] = dict(
             zip('ugrizy', [0.92, 0.87, 0.83, 0.80, 0.78, 0.76]))
 
-        self.atmos = atmos
+        #self.atmos = atmos
 
-        self.Load_Atmosphere(airmass)
+        # self.Load_Atmosphere(airmass)
 
     @get_val_decor
     def get(self, what, band):

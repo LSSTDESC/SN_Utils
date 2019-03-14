@@ -50,6 +50,8 @@ class Throughputs(object):
                 params[par] = kwargs[par]
                 # params[par]=str(kwargs[par])
 
+        print('hhh', params, kwargs.keys())
+        self.atmos = params['atmos']
         self.throughputsDir = os.getenv(params['through_dir'])
         if os.path.exists(os.path.join
                           (os.getenv(params['atmos_dir']), 'atmos')):
@@ -134,6 +136,7 @@ class Throughputs(object):
                                                         wavelen_min=self.wave_min,
                                                         wavelen_max=self.wave_max)
      """
+
     def Load_DarkSky(self):
         """ Load DarkSky
         """
@@ -206,12 +209,15 @@ class Throughputs(object):
         if len(self.lsst_atmos_aerosol) > 0:
             plt.plot(self.atmos_aerosol.wavelen, self.atmos_aerosol.sb, 'k:',
                      label='X =%.1f atm+aero' % (self.airmass), linestyle='--')
-        plt.legend(loc=(0.85, 0.1), fontsize='smaller',
-                   fancybox=True, numpoints=1)
+        # plt.legend(loc=(0.85, 0.1), fontsize='smaller',
+            # fancybox=True, numpoints=1)
+
+        plt.legend(loc=(0.82, 0.1), fancybox=True, numpoints=1)
+
         plt.xlabel('Wavelength (nm)')
         plt.ylabel('Sb (0-1)')
         plt.title('System throughput')
-        plt.show()
+        # plt.show()
 
     def Plot_DarkSky(self):
         """ Plot darksky
@@ -243,4 +249,4 @@ class Throughputs(object):
         for band in self.filterlist:
             self.mean_wavelength[band] = np.sum(
                 self.lsst_atmos[band].wavelen*self.lsst_atmos[band].sb)\
-                /np.sum(self.lsst_atmos[band].sb)
+                / np.sum(self.lsst_atmos[band].sb)
